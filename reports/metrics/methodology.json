@@ -1,0 +1,77 @@
+{
+  "folds": [
+    {
+      "train_end_exclusive": "2025-01-01",
+      "valid_start": "2025-01-01",
+      "valid_end_exclusive": "2025-04-01"
+    },
+    {
+      "train_end_exclusive": "2025-04-01",
+      "valid_start": "2025-04-01",
+      "valid_end_exclusive": "2025-07-01"
+    },
+    {
+      "train_end_exclusive": "2025-07-01",
+      "valid_start": "2025-07-01",
+      "valid_end_exclusive": "2025-10-01"
+    },
+    {
+      "train_end_exclusive": "2025-10-01",
+      "valid_start": "2025-10-01",
+      "valid_end_exclusive": "2026-01-01"
+    }
+  ],
+  "zones": [
+    74,
+    75,
+    166,
+    95,
+    43,
+    82,
+    41,
+    97,
+    65,
+    130,
+    244,
+    42,
+    7,
+    129,
+    66,
+    260,
+    134,
+    33,
+    92,
+    93
+  ],
+  "features": [
+    "zone_id",
+    "hour",
+    "dow",
+    "month",
+    "weekend",
+    "day_index",
+    "lag_1",
+    "lag_24",
+    "lag_168",
+    "rolling_mean_24",
+    "rolling_mean_168",
+    "mean_duration_168h",
+    "fare_per_hour_168h",
+    "same_zone_share_168h",
+    "arrivals_lag1",
+    "arrivals_mean24",
+    "net_flow_mean24",
+    "lag_336",
+    "lag_504"
+  ],
+  "excluded_dst_days": [
+    "2024-03-10",
+    "2024-11-03",
+    "2025-03-09",
+    "2025-11-02"
+  ],
+  "label": "4Sight 19-feature independent reconstruction; not verified identical to the team source pipeline",
+  "model": "LightGBM Poisson fixed 600 trees, 0.05 learning rate, 31 leaves, min_child_samples=25, seed42; no 2026 used",
+  "raw_valid_trips_reported_full_2024_to_2026": 1501696,
+  "fallback_reader": "read-only miniature TLC Parquet decoder if pyarrow is unavailable"
+}
