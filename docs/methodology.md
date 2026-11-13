@@ -105,4 +105,14 @@ NYC Green Taxi 승차 건수 예측 프로젝트에서 사용한 데이터, 시�
 
 **데이터 출처:** [NYC Taxi & Limousine Commission — Trip Record Data](https://www.nyc.gov/site/tlc/about/tlc-trip-record-data.page)
 
-**프로젝트 맥락:** 4Sight 팀 공동 연구를 기반으로 작성했으며, 개인 제안과 팀 산출물 및 별도 재구성 결과를 구분합니다.
+## 7. 개인 기여 및 공동 결과 구분
+
+- **개인 기여(고아름):** 지역별 승차 건수 예측에 LightGBM의 **Poisson 목적함수를 사용하는 모델링 방향을 제안하고, 해당 모델을 직접 구현**했습니다.
+- **팀 공동 산출물:** 프로젝트에서 공유한 데이터 분석과 전처리, 최종모형 성능 평가 결과, 차량 배분 시나리오 및 발표 결과는 팀 공동 작업으로 구분합니다. 개인 모델 구현 기여가 있더라도 전체 프로젝트 결과를 개인 단독 산출물로 표현하지 않습니다.
+- **별도 재현 자료:** 2025년 Expanding Window 4-Fold 평가 결과는 팀의 2026년 최종모형 결과와 다른 재현·검증 실험입니다. 이 저장소에 공개된 시각화 코드는 평가 CSV를 그래프로 변환하며, **개인이 구현한 원본 모델 학습 코드 자체를 공개한 것은 아닙니다.**
+
+---
+
+**데이터 출처:** [NYC Taxi & Limousine Commission — Trip Record Data](https://www.nyc.gov/site/tlc/about/tlc-trip-record-data.page)
+
+**프로젝트 맥락:** 4Sight 팀 공동 연구를 기반으로 작성했으며, 개인의 모델링 제안·구현과 팀 공동 평가 결과 및 별도 재현 자료를 구분합니다.
