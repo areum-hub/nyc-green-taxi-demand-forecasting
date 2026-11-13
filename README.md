@@ -64,19 +64,37 @@ NYC Green Taxi의 과거 운행기록으로 지역별 **다음 1시간의 관측
 
 이전에 보고된 2,470건의 Coverage Proxy 차이는 실제 추가 승차 2,470건을 뜻하지 않으며, 금액 추정치 역시 실현 수익이 아닙니다.
 
-## 7. Python 시각화 코드 및 원자료
+## 7. 독립 재현 파이프라인: 전처리 → 학습·평가 → 시각화
 
-- [시각화 Python 코드](src/visualize_results.py)
-- [2025년 Fold별 평가 CSV](reports/metrics/2025_4fold_model_scores.csv)
-- [2025년 평균·표준편차 CSV](reports/metrics/2025_4fold_mean_sd.csv)
-- [2026년 팀 보고 평가 CSV](reports/metrics/2026_team_holdout_summary.csv)
+2025년 **Expanding Window 4-Fold** 성능은 다음 코드를 통해 재현할 수 있습니다. 원본 팀의 2026년 최종모형 구현과는 별도입니다.
 
-```bash
-pip install pandas matplotlib
+| 단계 | 코드 | 결과 |
+|---|---|---|
+| 1. 전처리·데이터 품질 확인 | [`src/prepare_data.py`](src/prepare_data.py) · [Parquet 보조 리더](src/parquet_min.py) | `data/processed/valid_trips.pkl`, [월별 품질 CSV](reports/metrics/raw_quality_reproduced.csv) |
+| 2. LightGBM Poisson 학습·4-Fold 평가 | [`src/run_4fold_cv.py`](src/run_4fold_cv.py) | [Fold별 지표](reports/metrics/2025_4fold_model_scores.csv), [평균·표준편차](reports/metrics/2025_4fold_mean_sd.csv), [실험 설정](reports/metrics/methodology.json) |
+| 3. 평가 결과 SVG 시각화 | [`src/visualize_results.py`](src/visualize_results.py) | [SVG 그래프 4개](reports/figures/) |
+
+**실행 방법 (Windows PowerShell · Python 3.10 이상)**
+
+```powershell
+git clone https://github.com/areum-hub/nyc-green-taxi-demand-forecasting.git
+cd nyc-green-taxi-demand-forecasting
+python -m pip install -r requirements.txt
+
+# NYC TLC 원본 2024년 1월 ~ 2025년 12월(24개)을
+# data/raw/ 아래 green_tripdata_YYYY-MM.parquet 형식으로 저장
+python src/prepare_data.py
+python src/run_4fold_cv.py
 python src/visualize_results.py
 ```
 
-Python 코드는 **집계된 평가 수치의 시각화**를 수행합니다. 모델을 다시 학습하거나 2026년 평가를 새로 계산하는 코드는 아닙니다.
+- 2026년 1~6월 Parquet 6개를 `data/raw/`에 추가하면 전처리 단계의 **월별 품질 확인**에만 포함되며, **2025년 4-Fold 학습·검증에서는 제외**됩니다. 원본 Parquet 및 전처리 중간 파일은 `.gitignore`로 관리합니다.
+- `train_until_exclusive`는 **학습에 포함되지 않는 첫 날짜**입니다. 예를 들어 `2025-01-01`이면 학습은 **2024-12-31까지**, 검증은 **2025-01-01부터**입니다. 같은 날짜가 `validation_from`에 표시되는 것은 정상입니다.
+- 2025년 실험에서 LightGBM Poisson **MAE 평균 1.140735**, Fold 간 표준편차 **0.063519**를 재확인했습니다. `Fold SD`는 신뢰구간이 아닙니다.
+- `visualize_results.py`는 평가 CSV를 읽어 **외부 그림 파일 없이 SVG 4개를 직접 생성**합니다. 공개된 SVG와 실제 Python 생성 결과가 **바이트 단위로 일치**하는 것을 확인했습니다.
+- 2026년 평가 결과 CSV는 **4Sight 팀이 보고한 별도 최종모형 결과**입니다. 현재 공개된 재현 코드는 2026년 최종모형의 원본 학습·평가 파이프라인과 **동일하지 않습니다**.
+
+**기존 평가 자료:** [2026년 팀 보고 결과](reports/metrics/2026_team_holdout_summary.csv) · [East Harlem North 실제·예측 시간별 수치](reports/metrics/2026_east_harlem_north_hourly.csv)
 
 ## 8. 한계 및 개선 과제
 
