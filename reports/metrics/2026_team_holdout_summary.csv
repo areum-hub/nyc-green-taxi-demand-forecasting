@@ -1,0 +1,10 @@
+metric,method,value
+mae,LightGBM Poisson,1.033615
+mae,3-week average,1.129255
+mae,Weekday-hour average,1.239
+rmse,LightGBM Poisson,1.918
+rmse,3-week average,2.136
+tvd,LightGBM Poisson,0.3213062
+tvd,Weekday-hour average,0.326845
+top5,LightGBM Poisson,0.6828621
+top5,Weekday-hour average,0.673357
