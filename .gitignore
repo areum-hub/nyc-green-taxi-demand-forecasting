@@ -218,3 +218,7 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# TLC raw trip data and reconstructed interim datasets (do not commit)
+data/raw/
+data/processed/
