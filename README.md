@@ -79,14 +79,10 @@ python src/run_4fold_cv.py
 python src/visualize_results.py
 ```
 
-2026년 1~6월의 원본 파일 6개는 선택 사항이며, 전처리 시 품질 집계에는 포함할 수 있지만 **2025년 독립 재현 학습·검증에는 사용하지 않습니다**. 대용량 원본 데이터와 전처리 중간 파일은 GitHub에 포함하지 않습니다.
+**데이터 관리:** 2026년 1~6월 원본 파일은 선택 사항이며 품질 집계에만 사용합니다. 2025년 독립 재현 학습·검증에는 포함하지 않습니다. 원본 Parquet와 전처리 중간 파일은 GitHub에 공개하지 않습니다.
 
 본 프로젝트는 별도의 API Key나 환경변수 설정 없이 실행할 수 있으므로 `.env.example` 파일을 사용하지 않습니다.
 
-**학습·검증 경계:** Fold별 CSV의 `train_until_exclusive`는 학습에 포함되지 않는 첫 날짜입니다. 예를 들어 `2025-01-01`은 2024년 12월 31일까지 학습하고 2025년 1월 1일부터 검증한다는 뜻입니다.
-
-> 이 공개 코드는 **2025년 독립 재현용**입니다. 2026년 팀 최종모형의 원본 학습·평가 파이프라인과 동일하지 않으며, 집계 결과를 시각화하는 코드만으로 팀 최종모형을 재현할 수는 없습니다.
-
-**추가 자료:** [검증 방법론 및 지표 정의](docs/methodology.md) · [2026년 팀 평가 수치](reports/metrics/2026_team_holdout_summary.csv) · [독립 재현 실험 설정](reports/metrics/methodology.json)
+**상세 안내:** [검증 방법론·학습 기간 경계](docs/methodology.md) · [2026년 팀 평가 결과](reports/metrics/2026_team_holdout_summary.csv) · [독립 재현 실험 설정](reports/metrics/methodology.json)
 
 **데이터 출처:** [NYC Taxi & Limousine Commission — Trip Record Data](https://www.nyc.gov/site/tlc/about/tlc-trip-record-data.page)
