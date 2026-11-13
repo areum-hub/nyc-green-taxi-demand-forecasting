@@ -1,4 +1,4 @@
-fold,train_through,validation_from,validation_through,method,mae,rmse,tvd,top5,train_rows,validation_rows,n_valid_hours,n_share_hours
+fold,train_until_exclusive,validation_from,validation_through,method,mae,rmse,tvd,top5,train_rows,validation_rows,n_valid_hours,n_share_hours
 Fold 1,2025-01-01,2025-01-01,2025-03-31,Poisson · 19-feature reproduction,1.2269051090800387,2.3999468478222834,0.2944522102208771,0.6752129844718767,164640,42720,2136,2130
 Fold 1,2025-01-01,2025-01-01,2025-03-31,3-week average,1.2845193508114856,2.4109515270775566,0.3028268827708022,0.6417065324876339,164640,42720,2136,2130
 Fold 1,2025-01-01,2025-01-01,2025-03-31,Weekday-hour mean,1.2784124239105157,2.236762835782546,0.30045273543681034,0.6652315036372698,164640,42720,2136,2130
