@@ -1,6 +1,6 @@
 # NYC Green Taxi Demand Forecasting
 
-**LightGBM Poisson 기반 지역별 승차 건수 예측 | 4Sight 팀 프로젝트 포트폴리오**
+**LightGBM Poisson 기반 지역별 승차 건수 예측 | 4Sight 팀 프로젝트**
 
 NYC Green Taxi 운행 데이터를 활용해 **지역별 다음 1시간의 관측 승차 건수**를 예측하고, 그 결과를 가상 차량 배치와 영업 효율화 의사결정에 활용하는 프로젝트입니다. 예측 정확도뿐 아니라 **시간순서에 따른 검증, 기준선 비교, 지역별 수요 분포의 예측 품질**을 함께 살펴봤습니다.
 
