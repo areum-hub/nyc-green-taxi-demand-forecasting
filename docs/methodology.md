@@ -1,42 +1,110 @@
-# Model validation methodology
+# 모델 검증 방법론 (Model Validation Methodology)
 
-## Dataset and target
+NYC Green Taxi 승차 건수 예측 프로젝트에서 사용한 데이터, 시계열 검증 설계, 비교 기준선(Baseline), 성능 지표 및 해석상 주의사항을 정리한 문서입니다.
 
-NYC TLC Green Taxi Trip Record Data, January 2024–June 2026 (30 monthly Parquet files). The team-reported quality review starts with **1,506,768** rows and retains **1,501,696** valid pickup records after month and pickup-zone validation. The target is the number of **observed pickups per zone per next hour**, not unserved passenger requests.
+## 1. 데이터와 예측 목표
 
-## Two distinct evaluations
+- **데이터 출처:** NYC TLC Green Taxi Trip Record Data
+- **분석 기간:** 2024년 1월~2026년 6월, 월별 Parquet 파일 30개
+- **원본 기록:** 1,506,768건
+- **유효 승차 기록:** 1,501,696건 (팀 프로젝트에서 승차 월 및 승차 지역 코드를 검토한 결과)
+- **예측 목표(Target):** 선택한 지역(Zone)별 **다음 1시간의 관측 승차 건수(Pickup Count)**
 
-| Validation | Training/selection | Evaluation | Status |
+분석 데이터는 **실제로 완료된 승차 기록**을 나타냅니다. 따라서 탑승하지 못한 승객의 잠재 수요나 특정 시점의 실제 가용 택시 수를 직접 측정하지는 못합니다.
+
+## 2. 두 가지 모델 평가 구분
+
+본 포트폴리오에는 **서로 구분해야 하는 두 평가 결과**가 있습니다.
+
+| 구분 | 학습 및 모델 선택 | 평가 기간 | 결과의 성격 |
 | --- | --- | --- | --- |
-| 2025 4-fold independent reconstruction | Expanding window from 2024 onward | 2025 Q1, Q2, Q3, Q4 | Separate experiment; fold results included in `reports/metrics/` |
-| 2026 team final-model evaluation | 2025 Q4 internal model selection; 2024–25 refit | 2026 Jan–Jun retrospective hourly evaluation | Team-reported; original team training pipeline **not included** |
+| **2025년 4-Fold 시계열 교차검증** | 2024년부터 학습 범위를 점차 확장하는 Expanding Window | 2025년 1~4분기 | **독립 재현 실험**. Fold별 결과를 `reports/metrics/`에 공개 |
+| **2026년 상반기 팀 최종모형 평가** | 2025년 4분기에 내부 모델을 선택한 후 2024~2025년 데이터로 재학습 | 2026년 1~6월 | **팀 프로젝트에서 보고한 회고 평가**. 최종모형 원본 학습 파이프라인은 이 저장소에 포함되지 않음 |
 
-The two tracks differ in implementation and **must not be compared as if they are one model experiment**.
+**중요:** 2025년 4-Fold 실험은 기존 팀의 최종모형 학습 코드를 동일하게 재실행한 결과가 아닙니다. 따라서 **두 평가 수치를 하나의 동일한 모델 파이프라인에서 얻은 연속 성능처럼 비교해서는 안 됩니다.**
 
-### Expanding-window folds
+## 3. Expanding Window 기반 4-Fold 검증
 
-| Fold | Training | Validation |
+시간순서를 유지하기 위해 각 검증 구간보다 앞선 데이터만 학습에 사용합니다.
+
+| Fold | 학습 기간(Training) | 검증 기간(Validation) |
 | --- | --- | --- |
-| 1 | 2024 Jan–Dec | 2025 Jan–Mar |
-| 2 | 2024 Jan–2025 Mar | 2025 Apr–Jun |
-| 3 | 2024 Jan–2025 Jun | 2025 Jul–Sep |
-| 4 | 2024 Jan–2025 Sep | 2025 Oct–Dec |
+| Fold 1 | 2024년 1~12월 | 2025년 1~3월 |
+| Fold 2 | 2024년 1월~2025년 3월 | 2025년 4~6월 |
+| Fold 3 | 2024년 1월~2025년 6월 | 2025년 7~9월 |
+| Fold 4 | 2024년 1월~2025년 9월 | 2025년 10~12월 |
 
-In the independently reconstructed experiment, target zones are selected from **2024 only**; 2026 observations do not enter training or validation. Lag 504 initialization and NYC DST transition days are excluded from evaluation. The independently reconstructed model uses 19 features: six zone/calendar variables, seven historical pickup variables, and six past completed-trip/arrival variables. Time-dependent completed-trip signals must be lagged to avoid future information.
+독립 재현 실험의 검증 기준은 다음과 같습니다.
 
-### Fixed model / baselines
+- **지역 선정:** 2024년 데이터만 이용해 예측 대상 상위 20개 지역을 선정합니다.
+- **시간순서 준수:** 검증 시점 이후의 실제 승차량과 운행 결과가 모델 입력에 포함되지 않도록 합니다.
+- **초기 관측 구간:** 최대 시차인 Lag 504를 구성하기 위한 초기 504시간을 평가에서 제외합니다.
+- **시간대 처리:** 뉴욕의 서머타임(DST) 전환일은 평가에서 제외합니다.
+- **기간 분리:** 2026년 기록은 이 2025년 4-Fold 학습 및 검증에 사용하지 않습니다.
 
-The reconstructed model is LightGBM with Poisson objective, 600 estimators, learning_rate=0.05, num_leaves=31, min_child_samples=25 and random_state=42. Baselines are 3-week historical same-hour average and weekday-hour mean. Original team code was not available for verification of exact implementation equivalence.
+## 4. Feature Engineering 및 모델 설정
 
-### Metrics
+독립 재현 모델은 총 **19개 특성(Features)**을 사용합니다.
 
-- **MAE, RMSE:** count prediction errors per zone-hour; lower is better.
-- **TVD:** mean hourly total variation distance between actual and predicted pickup shares over the selected 20 zones; lower is better.
-- **Top-5:** mean observed pickup share of the five highest-ranked predicted zones; higher is better.
-- **Fold error bars:** four-fold **sample standard deviation**, not a confidence interval.
+| 특성 분류 | 개수 | 설명 |
+| --- | ---: | --- |
+| 지역 및 달력 정보 | 6개 | 지역과 요일·시간 등 시간 관련 입력 |
+| 과거 승차량 정보 | 7개 | 과거 시차(Lag) 및 승차 이력에 기반한 입력 |
+| 과거 완료 운행·유입 흐름 | 6개 | 예측 시점 이전에 완료된 운행과 유입 정보를 활용한 입력 |
+| **합계** | **19개** | |
 
-## Caveats
+완료 운행 관련 정보는 **하차가 완료된 과거 시간**을 기준으로 구성해야 하며, 예측하려는 시간 이후의 정보가 들어가지 않도록 주의합니다. 이는 미래 정보 누수(Data Leakage)를 방지하기 위한 기준입니다.
 
-TLC records describe completed pickups, not unmet demand or fleet availability. The allocation of 20 vehicles is a hypothetical, largest-remainder conversion of prediction shares and not a validated dispatch policy. Six-month coverage counts and economic sensitivity are scenario metrics, not observed incremental rides or realized profit.
+### 독립 재현 모델의 주요 설정
 
-**Source:** [NYC TLC Trip Record Data](https://www.nyc.gov/site/tlc/about/tlc-trip-record-data.page).
+| 항목 | 설정 |
+| --- | --- |
+| 모델 | LightGBM (`LGBMRegressor`) |
+| 목적함수(Objective) | Poisson |
+| 반복 횟수(`n_estimators`) | 600 |
+| 학습률(`learning_rate`) | 0.05 |
+| `num_leaves` | 31 |
+| `min_child_samples` | 25 |
+| `random_state` | 42 |
+
+위 설정은 **독립 재현 실험의 설정**입니다. 일부 초매개변수 및 완료 운행 데이터 집계 방식이 팀 최종모형 원본 구현과 완전히 일치하는지는 확인되지 않았습니다.
+
+### 비교 기준선(Baseline)
+
+1. **과거 3주 평균:** 1주·2주·3주 전의 동일 시간대 관측 승차 건수 평균
+2. **요일·시간대 평균(Weekday-Hour Mean):** 과거 학습 기간의 동일 요일·시간대별 평균
+
+## 5. 성능 평가 지표
+
+| 지표 | 의미 | 해석 방향 |
+| --- | --- | --- |
+| **MAE** (Mean Absolute Error) | 지역·시간당 실제 승차 건수와 예측 건수 간 절대오차 평균 | 낮을수록 좋음 |
+| **RMSE** (Root Mean Squared Error) | 큰 예측오차에 더 높은 가중치를 주는 제곱평균제곱근오차 | 낮을수록 좋음 |
+| **TVD** (Total Variation Distance) | 상위 20개 지역에서 실제·예측 승차 비율 분포의 시간별 차이를 평균한 지표 | 낮을수록 좋음 |
+| **Top-5 승차 포착 비율** | 예측 결과로 선정한 상위 5개 지역이 실제 관측 승차에서 차지한 비율의 평균 | 높을수록 좋음 |
+
+4-Fold 결과의 오차막대(Error Bar)는 **Fold별 성능의 표본 표준편차(±1 SD)**를 나타냅니다. **95% 신뢰구간이나 예측구간을 의미하지 않습니다.**
+
+관련 자료:
+- [2025년 Fold별 성능 CSV](../reports/metrics/2025_4fold_model_scores.csv)
+- [2025년 평균 및 표준편차 CSV](../reports/metrics/2025_4fold_mean_sd.csv)
+- [2026년 팀 최종모형 평가 수치 CSV](../reports/metrics/2026_team_holdout_summary.csv)
+- [시각화 및 모델 평가 보고서](../reports/readme.md)
+
+## 6. 분석의 한계와 해석상 주의사항
+
+**관측 승차 ≠ 전체 잠재 수요:** TLC 기록에는 실제로 성사된 승차만 포함되므로 미충족 수요를 추정했다고 볼 수 없습니다.
+
+**가상 배분 ≠ 실제 운영 성과:** 예측 비율을 최대 나머지 방식(Largest Remainder Method)으로 **20대의 가상 차량**에 배정한 시나리오는 실제 배차 전략의 효과가 검증된 결과가 아닙니다. 택시 가용량, 재배치 시간 및 운영 제약을 추가로 고려해야 합니다.
+
+**Coverage Proxy ≠ 추가 승차 건수:** 6개월간의 Coverage 관련 지표는 시나리오 비교에 사용하는 대리 지표이며, 실제로 증가한 승차 건수를 뜻하지 않습니다.
+
+**조건부 금액 추정 ≠ 실현 이익:** 경제효과 민감도 분석은 명시된 가정에 기반한 시뮬레이션으로, 관측된 매출 증가나 순이익을 의미하지 않습니다.
+
+**재현 범위:** 저장소에 공개된 평가 CSV 및 시각화 코드는 기존 결과의 검토와 표현에 도움이 되지만, 팀 최종모형의 전체 학습·선택·평가 과정을 그대로 재현하는 근거는 아닙니다.
+
+---
+
+**데이터 출처:** [NYC Taxi & Limousine Commission — Trip Record Data](https://www.nyc.gov/site/tlc/about/tlc-trip-record-data.page)
+
+**프로젝트 맥락:** 4Sight 팀 공동 연구를 기반으로 작성했으며, 팀 보고 결과와 독립 재현 결과를 구분합니다.
