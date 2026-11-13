@@ -89,7 +89,7 @@ NYC Green Taxi 승차 건수 예측 프로젝트에서 사용한 데이터, 시�
 - [2025년 Fold별 성능 CSV](../reports/metrics/2025_4fold_model_scores.csv)
 - [2025년 평균 및 표준편차 CSV](../reports/metrics/2025_4fold_mean_sd.csv)
 - [2026년 팀 최종모형 평가 수치 CSV](../reports/metrics/2026_team_holdout_summary.csv)
-- [시각화 및 모델 평가 보고서](../reports/readme.md)
+- [시각화 및 모델 평가 보고서](../README.md)
 
 ## 6. 분석의 한계와 해석상 주의사항
 
