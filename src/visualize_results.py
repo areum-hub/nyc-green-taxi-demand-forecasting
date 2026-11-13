@@ -1,123 +1,142 @@
-"""GitHub portfolio plots from previously evaluated summary CSVs.
+"""Render the published SVG figures deterministically from evaluated CSV files.
 
-Run from the repository root:
-    pip install pandas matplotlib
-    python src/visualize_results.py
-
-This script only visualizes recorded model metrics. It does not train a model.
-2025: independent expanding-window CV reconstruction.
-2026: separately reported 4Sight final-model holdout.
+Run from repository root: python src/visualize_results.py
+This plots stored metrics; it does not retrain a model.
+2025 4-Fold reconstruction and 2026 team evaluation are distinct experiments.
 """
+import csv
 from pathlib import Path
-
-import matplotlib
-matplotlib.use("Agg")
-import matplotlib.pyplot as plt
-import pandas as pd
+from xml.sax.saxutils import escape
 
 ROOT = Path(__file__).resolve().parents[1]
-METRICS = ROOT / "reports" / "metrics"
-FIGURES = ROOT / "reports" / "figures"
+METRICS = ROOT / 'reports' / 'metrics'
+FIGURES = ROOT / 'reports' / 'figures'
 FIGURES.mkdir(parents=True, exist_ok=True)
-METHODS = {
-    "Poisson · 19-feature reproduction": "LightGBM Poisson",
-    "3-week average": "3-week average",
-    "Weekday-hour mean": "Weekday-hour mean",
-}
-PALETTE = {
-    "LightGBM Poisson": "#13795b",
-    "3-week average": "#d99b29",
-    "Weekday-hour mean": "#7a899d",
-    "Weekday-hour average": "#7a899d",
-}
+COLORS = {'Poisson · 19-feature reproduction': '#13795b',
+          '3-week average': '#d99b29', 'Weekday-hour mean': '#7a899d'}
+LABELS = {'Poisson · 19-feature reproduction': 'LightGBM Poisson',
+          '3-week average': '3-week average', 'Weekday-hour mean': 'Weekday-hour mean'}
 
 
-def finish(fig, name):
-    fig.set_facecolor("#f8fafc")
-    fig.tight_layout()
-    fig.savefig(FIGURES / (name + ".svg"), bbox_inches="tight")
-    plt.close(fig)
+def read_csv(name):
+    with (METRICS / name).open(encoding='utf-8-sig', newline='') as f:
+        return list(csv.DictReader(f))
 
 
-def plot_2025_folds():
-    df = pd.read_csv(METRICS / "2025_4fold_model_scores.csv")
-    fig, ax = plt.subplots(figsize=(9, 4.8))
-    for original, label in METHODS.items():
-        sub = df.loc[df["method"].eq(original)].copy()
-        sub["fold_no"] = sub["fold"].str.extract(r"(\d+)").astype(int)
-        sub = sub.sort_values("fold_no")
-        ax.plot(sub["fold_no"], sub["mae"], "-o", linewidth=2,
-                label=label, color=PALETTE[label])
-    ax.set_xticks([1, 2, 3, 4], ["Fold 1", "Fold 2", "Fold 3", "Fold 4"])
-    ax.set_title("2025 independent 4-fold CV — MAE by fold")
-    ax.set_ylabel("MAE (pickups per zone-hour; lower is better)")
-    ax.grid(alpha=.2)
-    ax.legend(frameon=False)
-    finish(fig, "2025_cv_mae_by_fold")
+def f1(value):
+    return f'{float(value):.1f}'
 
 
-def plot_2025_summary():
-    df = pd.read_csv(METRICS / "2025_4fold_mean_sd.csv")
-    rows = [df.loc[df["method"].eq(k)].iloc[0] for k in METHODS]
-    labels = list(METHODS.values())
-    fig, ax = plt.subplots(figsize=(9, 4.5))
-    for i, (row, label) in enumerate(zip(rows, labels)):
-        ax.errorbar(row["mae_mean"], i, xerr=row["mae_sd"], fmt="o",
-                    capsize=6, markersize=9, color=PALETTE[label])
-        ax.text(row["mae_mean"] + row["mae_sd"] + .012, i,
-                f'{row["mae_mean"]:.3f} ± {row["mae_sd"]:.3f}', va="center")
-    ax.set_yticks(range(len(labels)), labels)
-    ax.invert_yaxis()
-    ax.set_xlim(1.0, 1.5)
-    ax.set_xlabel("MAE (pickups per zone-hour)")
-    ax.set_title("2025 independent CV — Mean ± fold standard deviation")
-    ax.grid(axis="x", alpha=.2)
-    ax.text(.02, -.21, "Error bars show sample SD, NOT confidence intervals",
-            transform=ax.transAxes, fontsize=9)
-    finish(fig, "2025_cv_mae_mean_sd")
+def t(x, y, label, size=16, color='#203047', bold=False):
+    weight = ' font-weight="700"' if bold else ''
+    return (f'<text x="{x}" y="{y}" font-size="{size}" fill="{color}"'
+            f'{weight}>{escape(str(label))}</text>')
 
 
-def plot_2026_mae():
-    df = pd.read_csv(METRICS / "2026_team_holdout_summary.csv")
-    sub = df.loc[df["metric"].eq("mae")]
-    labels = ["LightGBM Poisson", "3-week average"]
-    values = [sub.loc[sub["method"].eq(k), "value"].iloc[0] for k in labels]
-    fig, ax = plt.subplots(figsize=(8.2, 4.2))
-    bars = ax.barh(labels, values, color=[PALETTE[k] for k in labels])
-    ax.bar_label(bars, fmt="%.3f", padding=5)
-    ax.invert_yaxis()
-    ax.set_xlim(0, 1.4)
-    ax.set_xlabel("MAE (pickups per zone-hour)")
-    ax.set_title("2026 Jan–Jun — Team-reported holdout MAE")
-    finish(fig, "2026_holdout_mae")
+def line(x1, y1, x2, y2, color='#e3eaf1', width=1):
+    return (f'<line x1="{x1}" y1="{y1}" x2="{x2}" y2="{y2}"'
+            f' stroke="{color}" stroke-width="{width}"/>')
 
 
-def plot_2026_share():
-    df = pd.read_csv(METRICS / "2026_team_holdout_summary.csv")
-    fig, axes = plt.subplots(1, 2, figsize=(10, 4.4))
-    for ax, metric, title, factor in [
-        (axes[0], "tvd", "Demand share TVD (lower is better)", 1.0),
-        (axes[1], "top5", "Top-5 observed share (higher is better)", 100.0),
-    ]:
-        sub = df.loc[df["metric"].eq(metric)]
-        labels = ["Weekday-hour average", "LightGBM Poisson"]
-        vals = [sub.loc[sub["method"].eq(k), "value"].iloc[0] * factor
-                for k in labels]
-        bars = ax.bar(labels, vals, color=[PALETTE[k] for k in labels])
-        for bar, value in zip(bars, vals):
-            ax.text(bar.get_x() + bar.get_width()/2, value*1.025,
-                    f"{value:.3f}" if metric == "tvd" else f"{value:.2f}%",
-                    ha="center")
-        ax.set_ylim(0, max(vals)*1.22)
-        ax.set_title(title, fontsize=11)
-        ax.tick_params(axis="x", rotation=12)
-    fig.suptitle("2026 holdout — Team-reported share metrics")
-    finish(fig, "2026_share_metrics")
+def base(title, subtitle):
+    return ('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 520"'
+            ' role="img" aria-label="' + escape(title) + '">'
+            '<rect width="960" height="520" fill="#f8fafc"/>'
+            '<rect x="18" y="18" width="924" height="484" rx="18"'
+            ' fill="#fff" stroke="#e5ebf0"/>'
+            '<g font-family="Arial,Helvetica,sans-serif">'
+            + t(54, 70, title, 27, bold=True)
+            + t(54, 98, subtitle, 14, '#63758a'))
 
 
-if __name__ == "__main__":
-    plot_2025_folds()
-    plot_2025_summary()
-    plot_2026_mae()
-    plot_2026_share()
-    print("Created four SVG charts under reports/figures/")
+def save(name, svg):
+    (FIGURES / name).write_text(svg + '</g></svg>', encoding='utf-8')
+
+
+def fold_chart(scores):
+    s = base('2025 expanding-window CV: MAE by fold',
+             'Independent reproduction | Lower MAE is better')
+    xs = [140, 367, 593, 820]
+    for i in range(8):
+        v = 1.00 + 0.05*i
+        y = f1(405 - (v-1.0)*700)
+        s += line(125, y, 840, y) + t(68, f1(float(y)+5), f'{v:.2f}', 13, '#718096')
+    for i, x in enumerate(xs):
+        s += t(x-20, 440, f'Fold {i+1}', 14)
+    for method, color in COLORS.items():
+        rows = sorted((r for r in scores if r['method'] == method), key=lambda r:r['fold'])
+        if len(rows) != 4:
+            raise ValueError('Expected four folds per method: '+method)
+        pts = [(x, f1(405 - (float(r['mae'])-1.0)*700)) for x, r in zip(xs, rows)]
+        points = ' '.join(f'{x},{y}' for x,y in pts)
+        s += f'<polyline points="{points}" fill="none" stroke="{color}" stroke-width="4"/>'
+        for x,y in pts:
+            s += f'<circle cx="{x}" cy="{y}" r="6" fill="{color}"/>'
+    for method, x in zip(COLORS,[85,355,605]):
+        s += f'<circle cx="{x}" cy="478" r="6" fill="{COLORS[method]}"/>'
+        s += t(x+16, 484, LABELS[method], 14)
+    save('2025_cv_mae_by_fold.svg', s)
+
+
+def mean_chart(mean):
+    s = base('2025 CV: Mean MAE and fold variability',
+             'Error bars = sample SD across four folds, NOT confidence intervals')
+    by = {r['method']:r for r in mean}
+    for j in range(6):
+        v = 1.0 + 0.1*j
+        x = f1(300 + (v-1.0)*900)
+        s += line(x, 143, x, 435) + t(f1(float(x)-15), 457, f'{v:.1f}', 13, '#718096')
+    for idx,(method,color) in enumerate(COLORS.items()):
+        r = by[method]
+        y = 185 + idx*110
+        val,sd = float(r['mae_mean']), float(r['mae_sd'])
+        xx,lo,hi = [f1(300+(v-1.0)*900) for v in [val, val-sd, val+sd]]
+        s += t(54,y+5,LABELS[method],15)
+        s += line(lo,y,hi,y,color,5)+line(lo,y-12,lo,y+12,color,3)+line(hi,y-12,hi,y+12,color,3)
+        s += f'<circle cx="{xx}" cy="{y}" r="9" fill="{color}"/>'
+        s += t(755,y+5,f'{val:.3f} ± {sd:.3f}',15)
+    save('2025_cv_mae_mean_sd.svg',s)
+
+
+def holdout_mae(hold):
+    s=base('2026 H1 holdout: MAE',
+           'Team-reported final model | Separate from 2025 independent CV')
+    by = {(r['metric'],r['method']):float(r['value']) for r in hold}
+    for idx,(method,color) in enumerate([('LightGBM Poisson','#13795b'),('3-week average','#d99b29')]):
+        v=by[('mae',method)]; y=190+idx*125; width=f1(v*445)
+        s+=t(62,y+30,method,19)
+        s+=f'<rect x="310" y="{y}" width="{width}" height="54" rx="8" fill="{color}"/>'
+        s+=t(f1(322+float(width)),y+35,f'{v:.3f}',20)
+    s+=t(305,469,'MAE: observed pickups per zone-hour (lower is better)',15,'#63758a')
+    save('2026_holdout_mae.svg',s)
+
+
+def share_chart(hold):
+    s=base('2026 H1: Demand share evaluation',
+           'Team-reported final model | Modest differences in share metrics')
+    by={(r['metric'],r['method']):float(r['value']) for r in hold}
+    for idx,(metric,title,scale) in enumerate([('tvd','TVD (lower is better)',0.40),('top5','Top-5 observed pickup share (higher is better)',0.80)]):
+        y=173+idx*145
+        s+=t(52,y-24,title,18)
+        for j,(method,color) in enumerate([('Weekday-hour average','#7a899d'),('LightGBM Poisson','#13795b')]):
+            val=by[(metric,method)]; yy=y+j*42; width=f1(val/scale*475)
+            s+=t(56,yy+21,method,14)
+            s+=f'<rect x="280" y="{yy}" width="{width}" height="29" rx="6" fill="{color}"/>'
+            label=f'{val:.3f}' if metric=='tvd' else f'{val*100:.2f}%'
+            s+=t(f1(292+float(width)),yy+21,label,15)
+    save('2026_share_metrics.svg',s)
+
+
+def main():
+    scores=read_csv('2025_4fold_model_scores.csv')
+    mean=read_csv('2025_4fold_mean_sd.csv')
+    hold=read_csv('2026_team_holdout_summary.csv')
+    fold_chart(scores)
+    mean_chart(mean)
+    holdout_mae(hold)
+    share_chart(hold)
+    print('Generated four SVG figures in',FIGURES)
+
+
+if __name__=='__main__':
+    main()
