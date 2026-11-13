@@ -89,6 +89,4 @@ Python 코드는 **집계된 평가 수치의 시각화**를 수행합니다. �
 | **개인 기여 — 고아름** | 지역별 승차 건수 예측을 위한 **LightGBM Poisson 모델링 방식을 제안하고, 해당 모델을 직접 구현**했습니다. |
 | **4Sight 팀 공동 산출물** | 데이터 전처리·분석, 모델을 활용한 학습·최종모형 평가, 2026년 상반기 검증 결과, 차량 배분 시나리오 및 발표 자료는 팀 프로젝트의 공동 산출물로 구분합니다. |
 
-개인이 LightGBM Poisson 모델을 직접 구현했지만, 현재 이 저장소에는 해당 원본 모델 학습 코드가 공개되어 있지 않습니다. 공개된 `src/visualize_results.py`는 이미 산출된 평가 CSV를 그래프로 표현하는 **시각화 전용 코드**이며 모델 학습 코드는 아닙니다.
-
 **데이터 출처:** [NYC TLC Trip Record Data](https://www.nyc.gov/site/tlc/about/tlc-trip-record-data.page).
