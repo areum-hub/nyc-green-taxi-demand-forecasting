@@ -18,7 +18,7 @@ This portfolio investigates whether historical NYC Green Taxi trip records can f
 
 ## Model evaluation
 
-- [Evaluation summary and error analysis](reports/model_evaluation_summary.md)
+- [Evaluation summary and error analysis](reports/readme.md)
 - [Validation design, metrics, and caveats](docs/methodology.md)
 - [2025 independent cross-validation: fold-level metrics](reports/metrics/2025_4fold_model_scores.csv)
 - [2025 independent cross-validation: mean and standard deviation](reports/metrics/2025_4fold_mean_sd.csv)
@@ -33,7 +33,7 @@ The 2026 team holdout improved count MAE by about 8.5% relative to the 3-week av
 - **Study region:** 20 high-volume pickup zones selected from the available past.
 - **Model family:** LightGBM Poisson regression with calendar, historical pickup lags, rolling means, and past completed-trip flow signals.
 
-See [local data setup](data/README.md). Raw trip files are not committed.
+Download the monthly `green_tripdata_YYYY-MM.parquet` files from the [NYC TLC Trip Record Data page](https://www.nyc.gov/site/tlc/about/tlc-trip-record-data.page) and store them locally under `data/raw/` when running the analysis. Raw trip files are not committed to GitHub.
 
 ## Business illustration
 
