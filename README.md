@@ -130,10 +130,6 @@ python src/visualize_results.py
 
 자세한 전처리·검증 경계와 평가 지표 정의는 [검증 방법론](docs/methodology.md)을 참고하세요.
 
-## 기여 방법 (Contributing)
-
-오류 제보, 문서 개선, 재현성 개선 제안은 GitHub [Issues](https://github.com/areum-hub/nyc-green-taxi-demand-forecasting/issues)로 남길 수 있습니다. 코드 변경을 제안하려면 변경 목적과 실행·검증 방법을 설명한 Pull Request를 제출해 주세요. 특히 **2025년 독립 재현 코드와 2026년 팀 결과의 출처 구분**을 유지해 주세요.
-
 ## 라이선스 및 저작권 (License)
 
 저장소의 **공개된 자체 코드**는 [MIT License](LICENSE)에 따라 이용할 수 있습니다. 라이선스 고지와 저작권 표시를 유지해 주세요. 외부 NYC TLC 데이터 및 제3자 저작물은 이 MIT 허가에 자동으로 포함되지 않으며, 각각의 이용 조건이 우선합니다. 팀 공동 산출물의 재사용·재배포는 해당 권리 관계도 별도로 확인해야 합니다.
