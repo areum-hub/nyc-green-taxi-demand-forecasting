@@ -114,13 +114,29 @@ python src/visualize_results.py
 
 ## 프로젝트 구조
 
-| 경로 | 설명 |
+현재 GitHub에 공개된 파일을 기준으로 정리했습니다. **2025년 독립 재현 코드**와 **2026년 팀 최종모형의 보고 지표**는 구분합니다.
+
+| 경로 | 역할 |
 | --- | --- |
-| [`src/`](src/) | 데이터 전처리, 2025년 독립 재현 학습·평가, 결과 시각화 코드 |
-| [`docs/methodology.md`](docs/methodology.md) | 데이터 기간, 특성, 시계열 검증 및 평가 방법론 |
-| [`reports/metrics/`](reports/metrics/) | 독립 재현 지표와 팀 보고 지표 및 설정 파일 |
-| [`reports/figures/`](reports/figures/) | 모델 평가 시각화 |
-| `data/raw/`, `data/processed/` | 사용자가 준비하는 원본 데이터 및 로컬 중간 산출물(공개 저장소에 포함하지 않음) |
+| [`src/prepare_data.py`](src/prepare_data.py) | NYC TLC 원본 Parquet 전처리, 유효 승차 기록 생성 및 월별 품질 집계 |
+| [`src/parquet_min.py`](src/parquet_min.py) | Parquet 데이터의 필요한 열을 읽기 위한 보조 모듈 |
+| [`src/run_4fold_cv.py`](src/run_4fold_cv.py) | 2024~2025년 데이터를 이용한 LightGBM Poisson **2025년 Expanding Window 4-Fold 독립 재현** 학습·평가 |
+| [`src/visualize_results.py`](src/visualize_results.py) | 저장된 2025년 독립 재현·2026년 팀 평가 지표를 바탕으로 SVG 그래프 생성 |
+| [`docs/methodology.md`](docs/methodology.md) | 데이터 정제, 특성 구성, 시계열 검증 및 평가 방법 설명 |
+| [`reports/metrics/`](reports/metrics/) | 2025년 독립 재현 지표, 2026년 팀 보고 지표, 데이터 품질 집계 및 실험 설정 파일 |
+| [`reports/figures/`](reports/figures/) | 2025년 교차검증·2026년 팀 평가 결과의 SVG 시각화 |
+| [`requirements.txt`](requirements.txt) | Python 실행에 필요한 패키지 의존성 |
+| [`.gitignore`](.gitignore) | 원본 데이터·중간 산출물·가상환경 등 Git 추적 제외 설정 |
+| [`LICENSE`](LICENSE) | 공개한 자체 소스 코드의 MIT 라이선스 |
+
+**로컬에서만 사용하는 경로** — 다음 폴더는 GitHub에 포함되어 있지 않으며, 사용자가 원본 데이터를 준비하거나 전처리 코드를 실행할 때 이용합니다.
+
+| 로컬 경로 | 설명 |
+| --- | --- |
+| `data/raw/` | 사용자가 다운로드한 NYC TLC Green Taxi 월별 원본 Parquet 파일 (2024~2025년 필수, 2026년 상반기 선택) |
+| `data/processed/` | 전처리 과정에서 생성되는 중간 파일 `valid_trips.pkl` |
+
+> **범위 안내:** 저장소의 학습·평가 스크립트는 **2025년 독립 재현 실험**용입니다. 2026년 상반기 결과는 팀의 **별도 보고 지표**로 보관하며, 해당 팀 최종모형의 원본 학습·평가 코드는 포함하지 않습니다.
 
 ## 재현 범위 및 한계
 
