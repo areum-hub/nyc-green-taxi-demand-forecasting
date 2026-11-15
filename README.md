@@ -65,19 +65,43 @@ NYC Green Taxi 운행 데이터를 활용해 **지역별 다음 1시간의 관�
 | 2. LightGBM 학습·평가 | [`src/run_4fold_cv.py`](src/run_4fold_cv.py) | [Fold별 지표](reports/metrics/2025_4fold_model_scores.csv), [평균·표준편차](reports/metrics/2025_4fold_mean_sd.csv) |
 | 3. SVG 그래프 생성 | [`src/visualize_results.py`](src/visualize_results.py) | [시각화 파일](reports/figures/) |
 
-**실행 환경:** Python 3.10 이상, Windows PowerShell
+### 설치 및 실행
+
+**필수 환경:** Python 3.10 이상, Git, 패키지 설치를 위한 인터넷 연결. 아래 명령은 **Windows PowerShell 예시**입니다. 운영체제에 따라 가상환경 활성화 명령이 달라질 수 있습니다.
 
 ```powershell
 git clone https://github.com/areum-hub/nyc-green-taxi-demand-forecasting.git
 cd nyc-green-taxi-demand-forecasting
-python -m pip install -r requirements.txt
 
-# NYC TLC에서 2024~2025년 월별 파일 24개를 내려받아
-# data/raw/green_tripdata_YYYY-MM.parquet 형식으로 저장
+# 권장: 프로젝트 전용 가상환경 생성
+python -m venv .venv
+.\.venv\Scripts\Activate.ps1
+python -m pip install -r requirements.txt
+```
+
+**원본 데이터 준비:** [NYC TLC 공식 Trip Record Data](https://www.nyc.gov/site/tlc/about/tlc-trip-record-data.page) 페이지의 **Green Taxi Trip Records**에서 `2024-01`부터 `2025-12`까지 월별 Parquet 파일 **24개**를 내려받고, 저장소 루트 아래 `data/raw/`에 다음과 같이 배치합니다. 원본 파일은 이 저장소에 포함하지 않습니다.
+
+```text
+data/
+  raw/
+    green_tripdata_2024-01.parquet
+    ...
+    green_tripdata_2025-12.parquet
+```
+
+파일명은 `green_tripdata_YYYY-MM.parquet` 형식을 권장합니다. 전처리 스크립트는 같은 월에 해당하는 파일이 2개 이상 있으면 중복 오류를 발생시킵니다.
+
+데이터 준비 후 저장소 루트에서 순서대로 실행합니다.
+
+```powershell
 python src/prepare_data.py
 python src/run_4fold_cv.py
 python src/visualize_results.py
 ```
+
+**실행 결과 확인:** 전처리 품질 집계는 `reports/metrics/raw_quality_reproduced.csv`, Fold별 평가 결과는 `reports/metrics/2025_4fold_model_scores.csv`, 요약 지표는 `reports/metrics/2025_4fold_mean_sd.csv`에 저장됩니다. 시각화 결과는 `reports/figures/`에서 확인할 수 있습니다.
+
+패키지 의존성은 [`requirements.txt`](requirements.txt)에 정의되어 있으나 버전이 범위로 지정되어 있습니다. 따라서 설치 시점의 라이브러리 버전과 실행 환경에 따라 세부 수치가 달라질 수 있습니다. README의 수치는 저장된 보고 결과이며, 모든 환경에서 동일한 값이 재현된다고 보장하지 않습니다.
 
 **데이터 관리:** 2026년 1~6월 원본 파일은 선택 사항이며 품질 집계에만 사용합니다. 2025년 독립 재현 학습·검증에는 포함하지 않습니다. 원본 Parquet와 전처리 중간 파일은 GitHub에 공개하지 않습니다.
 
@@ -86,3 +110,30 @@ python src/visualize_results.py
 **상세 안내:** [검증 방법론·학습 기간 경계](docs/methodology.md) · [2026년 팀 평가 결과](reports/metrics/2026_team_holdout_summary.csv) · [독립 재현 실험 설정](reports/metrics/methodology.json)
 
 **데이터 출처:** [NYC Taxi & Limousine Commission — Trip Record Data](https://www.nyc.gov/site/tlc/about/tlc-trip-record-data.page)
+
+
+## 프로젝트 구조
+
+| 경로 | 설명 |
+| --- | --- |
+| [`src/`](src/) | 데이터 전처리, 2025년 독립 재현 학습·평가, 결과 시각화 코드 |
+| [`docs/methodology.md`](docs/methodology.md) | 데이터 기간, 특성, 시계열 검증 및 평가 방법론 |
+| [`reports/metrics/`](reports/metrics/) | 독립 재현 지표와 팀 보고 지표 및 설정 파일 |
+| [`reports/figures/`](reports/figures/) | 모델 평가 시각화 |
+| `data/raw/`, `data/processed/` | 사용자가 준비하는 원본 데이터 및 로컬 중간 산출물(공개 저장소에 포함하지 않음) |
+
+## 재현 범위 및 한계
+
+- 이 저장소의 실행 코드는 **2025년 Expanding Window 4-Fold 독립 재현 실험**을 대상으로 합니다. **2026년 상반기 팀 최종모형의 원본 학습·평가 파이프라인은 포함하지 않습니다.** 서로 다른 실험 결과를 동일한 코드로 재현한 수치로 해석하지 마세요.
+- TLC 기록은 **관측된 승차 기록**이며, 미충족 수요·실제 가용 차량·재배치 비용을 직접 제공하지 않습니다. 차량 20대 배분과 영업 효율화 결과는 **가상 시나리오**로, 실제 추가 매출이나 배차 효과를 입증한 결과가 아닙니다.
+- 데이터의 재배포 및 사용 조건은 [NYC TLC 공식 출처](https://www.nyc.gov/site/tlc/about/tlc-trip-record-data.page)에서 별도로 확인해 주세요.
+
+자세한 전처리·검증 경계와 평가 지표 정의는 [검증 방법론](docs/methodology.md)을 참고하세요.
+
+## 기여 방법 (Contributing)
+
+오류 제보, 문서 개선, 재현성 개선 제안은 GitHub [Issues](https://github.com/areum-hub/nyc-green-taxi-demand-forecasting/issues)로 남길 수 있습니다. 코드 변경을 제안하려면 변경 목적과 실행·검증 방법을 설명한 Pull Request를 제출해 주세요. 특히 **2025년 독립 재현 코드와 2026년 팀 결과의 출처 구분**을 유지해 주세요.
+
+## 라이선스 및 저작권 (License)
+
+저장소의 **공개된 자체 코드**는 [MIT License](LICENSE)에 따라 이용할 수 있습니다. 라이선스 고지와 저작권 표시를 유지해 주세요. 외부 NYC TLC 데이터 및 제3자 저작물은 이 MIT 허가에 자동으로 포함되지 않으며, 각각의 이용 조건이 우선합니다. 팀 공동 산출물의 재사용·재배포는 해당 권리 관계도 별도로 확인해야 합니다.
